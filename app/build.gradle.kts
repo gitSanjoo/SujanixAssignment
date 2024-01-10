@@ -47,5 +47,5 @@ dependencies {
 
     //for location
 
-    implementation ("com.google.android.gms:play-services-location:20.0.0'")
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
 }

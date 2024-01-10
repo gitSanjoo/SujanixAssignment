@@ -6,9 +6,28 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity"
     android:background="@drawable/img">
-
-
-
+    <Button
+        android:id="@+id/stat_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="START"
+        android:textColor="#217AC1"
+        android:textSize="30sp"
+        android:backgroundTint="@color/white"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/stop_btn"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+    <Button
+        android:id="@+id/stop_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="STOP"
+        android:textColor="#217AC1"
+        android:textSize="30sp"
+        android:backgroundTint="@color/white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/stat_btn"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
 
 
