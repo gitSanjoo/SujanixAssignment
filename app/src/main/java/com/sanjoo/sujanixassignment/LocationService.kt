@@ -5,7 +5,9 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.location.Geocoder
+import android.os.Binder
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.CoroutineScope
@@ -18,10 +20,12 @@ import kotlinx.coroutines.flow.onEach
 import java.util.Locale
 
 class LocationService:Service() {
+
     private val serviceScope= CoroutineScope(SupervisorJob()+ Dispatchers.IO)
-    private lateinit var locationClient: LocationClient
+    var locationClient: LocationClient?=null
+    private val binder = LocalBinder()
     override fun onBind(intent: Intent?): IBinder? {
-        return null
+        return binder
     }
     override fun onCreate() {
         super.onCreate()
@@ -48,9 +52,9 @@ class LocationService:Service() {
 
         val notificationManager=getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        locationClient.getLocationUpdate(100000L)
-            .catch { e->e.printStackTrace() }
-            .onEach { location ->
+        locationClient?.getLocationUpdate(5000L)
+            ?.catch { e->e.printStackTrace() }
+            ?.onEach { location ->
                 val lat=location.latitude.toString()
                 val long=location.longitude.toString()
 //                var country=getCountryName(lat,long)
@@ -59,10 +63,15 @@ class LocationService:Service() {
                 val updateNotification=notification.setContentText(
                     "Location: ($lat,$long ,$city)"
                 )
+                Log.d("locationLog","Location: ($lat,$long ,$city)")
                 notificationManager.notify(1,updateNotification.build())
-            }.launchIn(serviceScope)
+            }?.launchIn(serviceScope)
         startForeground(1,notification.build())
     }
+
+
+
+
     private fun stop(){
         stopForeground(true)
         stopSelf()
@@ -77,18 +86,6 @@ class LocationService:Service() {
         const val ACTION_STOP="ACTION_STOP"
     }
 
-
-
-    //fun getCountryName(lt: String, lg: String):String {
-//    var countryName = ""
-//    var geocoder = Geocoder(this, Locale.getDefault())
-//    var address = geocoder.getFromLocation(lt.toDouble(), lg.toDouble(),1)
-//
-//    if (address != null) {
-//        countryName=address.get(0).countryName
-//    }
-//    return countryName
-//}
     fun getCityName(lt: String, lg: String):String {
         var cityName = ""
         var geocoder = Geocoder(this, Locale.getDefault())
@@ -98,5 +95,9 @@ class LocationService:Service() {
             cityName=address.get(0).locality
         }
         return cityName
+    }
+
+    inner class LocalBinder : Binder() {
+        fun getService(): LocationService = this@LocationService
     }
 }

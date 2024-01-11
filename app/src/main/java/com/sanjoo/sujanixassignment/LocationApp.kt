@@ -7,6 +7,8 @@ import android.content.Context
 import android.os.Build
 
 class LocationApp:Application() {
+
+
     override fun onCreate() {
         super.onCreate()
         if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.O){
@@ -16,5 +18,9 @@ class LocationApp:Application() {
             val notificationManager=getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
+    }
+
+    companion object{
+        var isTracking=false
     }
 }
