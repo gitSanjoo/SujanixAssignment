@@ -19,12 +19,17 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SujanixAssignment"
         tools:targetApi="31">
+        <activity
+            android:name=".HistoryActivity"
+            android:exported="false" />
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyApGXZIbmy9ECp9OowIiFsFfang74nDpLY"/>
+            android:value="AIzaSyApGXZIbmy9ECp9OowIiFsFfang74nDpLY" />
+
         <activity
             android:name=".MapsActivity"
-            android:exported="true" >
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -35,7 +40,6 @@
         <service
             android:name=".LocationService"
             android:foregroundServiceType="location" />
-
     </application>
 
 </manifest>
