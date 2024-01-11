@@ -8,6 +8,7 @@ import android.content.ServiceConnection
 import android.location.Location
 import android.os.Bundle
 import android.os.IBinder
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.databinding.DataBindingUtil
@@ -19,9 +20,11 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.sanjoo.sujanixassignment.databinding.ActivityMapsBinding
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -54,6 +57,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         binding=DataBindingUtil.setContentView(this,R.layout.activity_maps)
         requestForPermissions()
         initUi()
+        fetchLocationTracks()
+    }
+
+    private fun fetchLocationTracks(){
+        lifecycleScope.launch(Dispatchers.IO) {
+            val tracks=(applicationContext as LocationApp).locationTrackDB.tracksDao().getAllTracks()
+            Log.d("logTracks",tracks.toString()+"::"+tracks.lastOrNull()?.endTimestamp)
+        }
     }
 
     private fun initUi() {
@@ -61,8 +72,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             Intent(applicationContext, LocationService::class.java).apply {
                 action = LocationService.ACTION_START
                 startService(this)
-                setLocationListener()
-
+                bindService(this,connection,Context.BIND_AUTO_CREATE)
             }
         }
         binding.stopLocationTracking.setOnClickListener {

@@ -5,10 +5,12 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.location.Geocoder
+import android.location.Location
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.room.Room
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,13 +19,17 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+import java.util.ArrayList
 import java.util.Locale
 
 class LocationService:Service() {
 
+
     private val serviceScope= CoroutineScope(SupervisorJob()+ Dispatchers.IO)
     var locationClient: LocationClient?=null
     private val binder = LocalBinder()
+    private val locationDataList=ArrayList<LocationData>()
     override fun onBind(intent: Intent?): IBinder? {
         return binder
     }
@@ -33,6 +39,8 @@ class LocationService:Service() {
             applicationContext,
             LocationServices.getFusedLocationProviderClient(applicationContext)
         )
+
+
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -55,16 +63,13 @@ class LocationService:Service() {
         locationClient?.getLocationUpdate(5000L)
             ?.catch { e->e.printStackTrace() }
             ?.onEach { location ->
-                val lat=location.latitude.toString()
-                val long=location.longitude.toString()
-//                var country=getCountryName(lat,long)
-                var city=getCityName(lat,long)
-
+                var address=getAddress(location)
                 val updateNotification=notification.setContentText(
-                    "Location: ($lat,$long ,$city)"
+                    "Location: (${location.latitude},${location.longitude} ,$address)"
                 )
-                Log.d("locationLog","Location: ($lat,$long ,$city)")
+                Log.d("locationLog","Location: (${location.latitude},${location.longitude} ,$address)")
                 notificationManager.notify(1,updateNotification.build())
+                locationDataList.add(LocationData(System.currentTimeMillis(),location.latitude,location.longitude,address))
             }?.launchIn(serviceScope)
         startForeground(1,notification.build())
     }
@@ -73,8 +78,18 @@ class LocationService:Service() {
 
 
     private fun stop(){
-        stopForeground(true)
-        stopSelf()
+        serviceScope.launch(Dispatchers.IO){
+            (applicationContext as LocationApp).locationTrackDB.tracksDao()
+                .addTrack(
+                    LocationTrackEntity(locationDataList.first().timestamp,
+                        System.currentTimeMillis(),
+                        locationDataList)
+                )
+        }.invokeOnCompletion {
+            locationDataList.clear()
+            stopForeground(true)
+            stopSelf()
+        }
     }
 
     override fun onDestroy() {
@@ -86,15 +101,14 @@ class LocationService:Service() {
         const val ACTION_STOP="ACTION_STOP"
     }
 
-    fun getCityName(lt: String, lg: String):String {
-        var cityName = ""
-        var geocoder = Geocoder(this, Locale.getDefault())
-        var address = geocoder.getFromLocation(lt.toDouble(), lg.toDouble(),3)
+    private fun getAddress(location: Location):String {
+        var address = ""
+        val geocoder = Geocoder(this, Locale.getDefault())
 
-        if (address != null) {
-            cityName=address.get(0).locality
+        geocoder.getFromLocation(location.latitude, location.longitude,1).let {
+            address=it?.get(0)?.subLocality+"\n"+it?.get(0)?.locality
         }
-        return cityName
+        return address
     }
 
     inner class LocalBinder : Binder() {
